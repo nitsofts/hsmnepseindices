@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # Function to scrape and extract the data using Selenium
 def scrape_data(url):
-    chrome_driver_path = 'chromedriver.exe'
+    chrome_driver_path = './chromedriver.exe'
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     driver = webdriver.Chrome(executable_path=chrome_driver_path, options=options)
