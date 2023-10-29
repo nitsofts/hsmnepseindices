@@ -6,8 +6,17 @@ import time
 
 app = Flask(__name__)
 
+# Function to download chromedriver.exe from GitHub
+def download_chromedriver():
+    chrome_driver_url = 'https://raw.githubusercontent.com/nitsofts/hsmnepseindices/main/chromedriver.exe'
+    response = requests.get(chrome_driver_url)
+    with open('chromedriver.exe', 'wb') as file:
+        file.write(response.content)
+
 # Function to scrape and extract the data using Selenium
 def scrape_data(url):
+    # Download chromedriver.exe
+    download_chromedriver()
     chrome_driver_path = './chromedriver.exe'
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
