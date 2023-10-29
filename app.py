@@ -3,15 +3,18 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
 import requests
+import os
 
 app = Flask(__name__)
 
-# Function to download chromedriver.exe from GitHub
+# Function to download chromedriver.exe from GitHub and set execute permissions
 def download_chromedriver():
     chrome_driver_url = 'https://raw.githubusercontent.com/nitsofts/hsmnepseindices/main/chromedriver.exe'
     response = requests.get(chrome_driver_url)
     with open('chromedriver.exe', 'wb') as file:
         file.write(response.content)
+    # Set execute permissions
+    os.chmod('chromedriver.exe', 0o775)  # This line sets read, write, and execute permissions
 
 # Function to scrape and extract the data using Selenium
 def scrape_data(url):
