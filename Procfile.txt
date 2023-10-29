@@ -1,1 +1,1 @@
-web: gunicorn hsmnepseindices:app
+web: uvicorn hsmnepseindices:app --host 0.0.0.0 --port $PORT
