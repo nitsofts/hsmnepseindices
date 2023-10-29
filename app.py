@@ -1,9 +1,8 @@
 from flask import Flask, request, jsonify
-from selenium import webdriver
 from bs4 import BeautifulSoup
-import time
-import requests
-import os
+asyncio = None  # Import asyncio only if you're not using an async environment
+import websockets
+import json
 
 app = Flask(__name__)
 
@@ -17,20 +16,16 @@ def download_chromedriver():
     os.chmod('chromedriver.exe', 0o775)  # This line sets read, write, and execute permissions
 
 # Function to scrape and extract the data using Selenium
-def scrape_data(url):
-    # Download chromedriver.exe
-    download_chromedriver()
-    chrome_driver_path = './chromedriver.exe'
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(executable_path=chrome_driver_path, options=options)
-    driver.get(url)
-    
+async def scrape_data(url):
+    browser = await pyppeteer.launch()
+    page = await browser.newPage()
+    await page.goto(url)
+
     # You may need to add some delay here to ensure the page loads completely.
-    time.sleep(5)
-    
-    html = driver.page_source
-    driver.quit()
+    await page.waitFor(5000)  # Waits for 5 seconds
+
+    html = await page.content()
+    await browser.close()
 
     soup = BeautifulSoup(html, 'html.parser')
     data = []
@@ -85,21 +80,29 @@ def scrape_data(url):
     return data
 
 @app.route('/get_nepse_indices', methods=['GET'])
-def get_indices():
-    data = scrape_data("https://merolagani.com/MarketSummary.aspx")
+async def get_indices():
+    url = "https://merolagani.com/MarketSummary.aspx"
+    data = await scrape_data(url)
     indices_data = [entry for entry in data if entry["indexType"] == "Indices"]
     return jsonify(indices_data)
 
 @app.route('/get_nepse_sub_indices', methods=['GET'])
-def get_sub_indices():
-    data = scrape_data("https://merolagani.com/MarketSummary.aspx")
+async def get_sub_indices():
+    url = "https://merolagani.com/MarketSummary.aspx"
+    data = await scrape_data(url)
     sub_indices_data = [entry for entry in data if entry["indexType"] == "Sub Indices"]
     return jsonify(sub_indices_data)
 
 @app.route('/get_nepse_indices_and_sub_indices', methods=['GET'])
-def get_indices_and_sub_indices():
-    data = scrape_data("https://merolagani.com/MarketSummary.aspx")
+async def get_indices_and_sub_indices():
+    url = "https://merolagani.com/MarketSummary.aspx"
+    data = await scrape_data(url)
     return jsonify(data)
 
 if __name__ == '__main__':
+    import asyncio
+
+    # Create an asyncio event loop
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
     app.run()
