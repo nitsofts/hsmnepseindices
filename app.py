@@ -2,11 +2,13 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from bs4 import BeautifulSoup
 from pyppeteer import launch
+import os
 
 app = FastAPI()
 
 # Function to scrape and extract the data using Pyppeteer
-async def scrape_data(url):
+async def scrape_data():
+    url = os.environ.get('SCRAPE_URL', 'https://merolagani.com/MarketSummary.aspx')
     browser = await launch()
     page = await browser.newPage()
     await page.goto(url)
@@ -71,20 +73,17 @@ async def scrape_data(url):
 
 @app.get('/get_nepse_indices')
 async def get_indices():
-    url = "https://merolagani.com/MarketSummary.aspx"
-    data = await scrape_data(url)
+    data = await scrape_data()
     indices_data = [entry for entry in data if entry["indexType"] == "Indices"]
     return JSONResponse(content=indices_data)
 
 @app.get('/get_nepse_sub_indices')
 async def get_sub_indices():
-    url = "https://merolagani.com/MarketSummary.aspx"
-    data = await scrape_data(url)
+    data = await scrape_data()
     sub_indices_data = [entry for entry in data if entry["indexType"] == "Sub Indices"]
     return JSONResponse(content=sub_indices_data)
 
 @app.get('/get_nepse_indices_and_sub_indices')
 async def get_indices_and_sub_indices():
-    url = "https://merolagani.com/MarketSummary.aspx"
-    data = await scrape_data(url)
+    data = await scrape_data()
     return JSONResponse(content=data)
