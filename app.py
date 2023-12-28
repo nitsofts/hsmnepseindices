@@ -20,7 +20,7 @@ def fetch_json(url):
     else:
         return None
 
-@app.route('/getIndices', methods=['GET'])
+@app.route('/get_indices', methods=['GET'])
 def get_indices():
     indices_url = "https://nepalipaisa.com/api/GetIndexLive?_={}"
     indices_data = fetch_json(indices_url)
@@ -30,7 +30,7 @@ def get_indices():
     else:
         return jsonify({"error": "Error fetching data"})
 
-@app.route('/getSubIndices', methods=['GET'])
+@app.route('/get_sub_indices', methods=['GET'])
 def get_subindices():
     subindices_url = "https://nepalipaisa.com/api/GetSubIndexLive?_={}"
     subindices_data = fetch_json(subindices_url)
@@ -40,7 +40,7 @@ def get_subindices():
     else:
         return jsonify({"error": "Error fetching data"})
 
-@app.route('/getAllIndices', methods=['GET'])
+@app.route('/get_all_indices', methods=['GET'])
 def get_all_indices():
     indices_url = "https://nepalipaisa.com/api/GetIndexLive?_={}"
     subindices_url = "https://nepalipaisa.com/api/GetSubIndexLive?_={}"
