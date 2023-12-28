@@ -1,89 +1,58 @@
-from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from bs4 import BeautifulSoup
-from pyppeteer import launch
-import os
+from flask import Flask, jsonify
+import requests
+import time
 
-app = FastAPI()
+app = Flask(__name__)
 
-# Function to scrape and extract the data using Pyppeteer
-async def scrape_data():
-    url = os.environ.get('SCRAPE_URL', 'https://merolagani.com/MarketSummary.aspx')
-    browser = await launch()
-    page = await browser.newPage()
-    await page.goto(url)
+def fetch_json(url):
+    # Get the current time in milliseconds
+    current_time_ms = int(round(time.time() * 1000))
 
-    # You may need to add some delay here to ensure the page loads completely.
-    await page.waitFor(5000)  # Waits for 5 seconds
+    # Update the URL with the current time
+    updated_url = url.format(current_time_ms)
 
-    html = await page.content()
-    await browser.close()
+    # Send a GET request to the URL
+    response = requests.get(updated_url)
 
-    soup = BeautifulSoup(html, 'html.parser')
-    data = []
+    # Check if the response is successful
+    if response.status_code == 200:
+        return response.json()['result']
+    else:
+        return None
 
-    # Your code for scraping the data from the soup goes here
-    # Extract the Indices data
-    indices_table = soup.find('table', {'class': 'table-index', 'data-live': 'index-summary-only'})
-    if indices_table:
-        time_element = indices_table.find_previous('span', {'class': 'label label-default pull-right'})
-        if time_element:
-            time = time_element.get_text().replace("As of ", "")
-            rows = indices_table.find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                if len(cols) == 4:
-                    index_name = cols[0].get_text()
-                    index_value = cols[1].get_text()
-                    percent_change = cols[3].get_text()
-                    # Filter out elements with empty text
-                    if index_name and index_value and percent_change:
-                        data.append({
-                            "indexName": index_name,
-                            "indexValue": index_value,
-                            "percentChange": percent_change,
-                            "asOfTime": time,
-                            "indexType": "Indices"
-                        })
+@app.route('/getIndices', methods=['GET'])
+def get_indices():
+    indices_url = "https://nepalipaisa.com/api/GetIndexLive?_={}"
+    indices_data = fetch_json(indices_url)
 
-    # Extract the Sub Indices data
-    subindices_table = soup.find('table', {'class': 'table-index', 'data-live': 'subindex-summary'})
-    if subindices_table:
-        time_element = subindices_table.find_previous('span', {'class': 'label label-default pull-right'})
-        if time_element:
-            time = time_element.get_text().replace("As of ", "")
-            rows = subindices_table.find_all('tr')
-            for row in rows:
-                cols = row.find_all('td')
-                if len(cols) == 4:
-                    index_name = cols[0].get_text()
-                    index_value = cols[1].get_text()
-                    percent_change = cols[3].get_text()
-                    # Filter out elements with empty text
-                    if index_name and index_value and percent_change:
-                        data.append({
-                            "indexName": index_name,
-                            "indexValue": index_value,
-                            "percentChange": percent_change,
-                            "asOfTime": time,
-                            "indexType": "Sub Indices"
-                        })
+    if indices_data is not None:
+        return jsonify(indices_data)
+    else:
+        return jsonify({"error": "Error fetching data"})
 
-    return data
+@app.route('/getSubIndices', methods=['GET'])
+def get_subindices():
+    subindices_url = "https://nepalipaisa.com/api/GetSubIndexLive?_={}"
+    subindices_data = fetch_json(subindices_url)
 
-@app.get('/get_nepse_indices')
-async def get_indices():
-    data = await scrape_data()
-    indices_data = [entry for entry in data if entry["indexType"] == "Indices"]
-    return JSONResponse(content=indices_data)
+    if subindices_data is not None:
+        return jsonify(subindices_data)
+    else:
+        return jsonify({"error": "Error fetching data"})
 
-@app.get('/get_nepse_sub_indices')
-async def get_sub_indices():
-    data = await scrape_data()
-    sub_indices_data = [entry for entry in data if entry["indexType"] == "Sub Indices"]
-    return JSONResponse(content=sub_indices_data)
+@app.route('/getAllIndices', methods=['GET'])
+def get_all_indices():
+    indices_url = "https://nepalipaisa.com/api/GetIndexLive?_={}"
+    subindices_url = "https://nepalipaisa.com/api/GetSubIndexLive?_={}"
 
-@app.get('/get_nepse_indices_and_sub_indices')
-async def get_indices_and_sub_indices():
-    data = await scrape_data()
-    return JSONResponse(content=data)
+    indices_data = fetch_json(indices_url)
+    subindices_data = fetch_json(subindices_url)
+
+    if indices_data is not None and subindices_data is not None:
+        combined_data = indices_data + subindices_data
+        return jsonify(combined_data)
+    else:
+        return jsonify({"error": "Error fetching data"})
+
+if __name__ == '__main__':
+    app.run(debug=True)
